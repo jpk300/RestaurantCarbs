@@ -8,15 +8,15 @@ const restaurantList = document.getElementById("restaurantList");
 const saveSelectionButton = document.getElementById("saveSelection");
 const selectionStatus = document.getElementById("selectionStatus");
 
-let workingCatalog = getCatalog();
+let workingCatalog = [];
+let selectedIds = [];
 
 function isSpreadsheetPath(path) {
   return /\.(xls|xlsx)(\?|$)/i.test(path);
 }
 
 function renderCatalog() {
-  const selected = new Set(getSelectedIds());
-
+  const selected = new Set(selectedIds);
   if (!workingCatalog.length) {
     restaurantList.innerHTML = '<p class="help-text">No restaurants loaded yet.</p>';
     return;
@@ -31,121 +31,92 @@ function renderCatalog() {
     .join("");
 }
 
-function loadSourceSettings() {
-  const source = getDataSource();
-  datasetUrlInput.value = source.datasetUrl;
+async function hydrate() {
+  const state = await apiGet("/api/state");
+  datasetUrlInput.value = state.dataSource?.datasetUrl || "";
+  workingCatalog = Array.isArray(state.catalog) ? state.catalog : [];
+  selectedIds = Array.isArray(state.selectedIds) ? state.selectedIds : [];
+  renderCatalog();
 }
 
 async function parseDatasetFromResponse(response, pathHint) {
   if (isSpreadsheetPath(pathHint)) {
-    const buffer = await response.arrayBuffer();
-    return parseMenuStatWorkbook(buffer);
+    return parseMenuStatWorkbook(await response.arrayBuffer());
   }
-  const text = await response.text();
-  return parseMenuStatCsv(text);
+  return parseMenuStatCsv(await response.text());
 }
 
-function storeWorkingCatalog(catalog, statusElement) {
+async function persistCatalog(catalog, statusElement) {
   workingCatalog = catalog;
-  const stored = setCatalog(catalog);
-  if (!stored) {
-    setStatus(
-      statusElement,
-      `Loaded ${catalog.length} restaurants, but local cache is too large; publish still works for current session.`,
-      "error"
-    );
-    return;
-  }
+  await apiPost("/api/catalog", { catalog });
   setStatus(statusElement, `Loaded ${catalog.length} restaurants.`, "success");
 }
 
-saveSourceButton.addEventListener("click", () => {
-  const datasetUrl = datasetUrlInput.value.trim();
-  const ok = setDataSource({ datasetUrl });
-  setStatus(sourceStatus, ok ? "Dataset source saved." : "Could not save source in browser storage.", ok ? "success" : "error");
+saveSourceButton.addEventListener("click", async () => {
+  try {
+    await apiPost("/api/source", { datasetUrl: datasetUrlInput.value.trim() });
+    setStatus(sourceStatus, "Dataset source saved.", "success");
+  } catch (error) {
+    setStatus(sourceStatus, error.message, "error");
+  }
 });
 
 loadFromUrlButton.addEventListener("click", async () => {
   const url = datasetUrlInput.value.trim();
-
   if (!url) {
     setStatus(sourceStatus, "Provide a dataset URL first.", "error");
     return;
   }
 
   try {
-    setStatus(sourceStatus, "Downloading dataset...");
-    const response = await fetch(url);
+    setStatus(sourceStatus, "Downloading dataset via server...");
+    const response = await fetch(`/api/fetch-dataset?url=${encodeURIComponent(url)}`);
     if (!response.ok) {
-      throw new Error(`Unable to download dataset (${response.status}).`);
+      const payload = await response.json();
+      throw new Error(payload.error || "Load failed");
     }
-
     const catalog = await parseDatasetFromResponse(response, url);
-    storeWorkingCatalog(catalog, sourceStatus);
+    await persistCatalog(catalog, sourceStatus);
     renderCatalog();
   } catch (error) {
-    const message =
-      error instanceof TypeError
-        ? "Load failed. This is usually a browser CORS restriction from menustat.org. Download the file manually, then use Upload Dataset File below."
-        : error.message;
-    setStatus(sourceStatus, message, "error");
+    setStatus(sourceStatus, error.message, "error");
   }
 });
 
 csvInput.addEventListener("change", async (event) => {
   const [file] = event.target.files;
-  if (!file) {
-    return;
-  }
+  if (!file) return;
 
   try {
     let catalog;
     if (isSpreadsheetPath(file.name)) {
-      const buffer = await file.arrayBuffer();
-      catalog = parseMenuStatWorkbook(buffer);
+      catalog = parseMenuStatWorkbook(await file.arrayBuffer());
     } else {
-      const csvText = await file.text();
-      catalog = parseMenuStatCsv(csvText);
+      catalog = parseMenuStatCsv(await file.text());
     }
 
-    storeWorkingCatalog(catalog, uploadStatus);
+    await persistCatalog(catalog, uploadStatus);
     renderCatalog();
   } catch (error) {
     setStatus(uploadStatus, error.message, "error");
   }
 });
 
-saveSelectionButton.addEventListener("click", () => {
-  const selectedIds = [...restaurantList.querySelectorAll('input[type="checkbox"]:checked')].map(
-    (node) => node.value
-  );
+saveSelectionButton.addEventListener("click", async () => {
+  const ids = [...restaurantList.querySelectorAll('input[type="checkbox"]:checked')].map((node) => node.value);
 
-  const selectedRestaurants = workingCatalog.filter((restaurant) => selectedIds.includes(restaurant.id));
-
-  const idsSaved = setSelectedIds(selectedIds);
-  const publishedSaved = setPublishedCatalog(selectedRestaurants);
-
-  if (!selectedIds.length) {
+  if (!ids.length) {
     setStatus(selectionStatus, "No restaurants selected; user page will show a prompt.", "error");
     return;
   }
 
-  if (!publishedSaved) {
-    setStatus(
-      selectionStatus,
-      "Selection checked, but published data could not be stored (browser storage limit). Try fewer restaurants.",
-      "error"
-    );
-    return;
+  try {
+    const payload = await apiPost("/api/publish", { selectedIds: ids });
+    selectedIds = ids;
+    setStatus(selectionStatus, `Published ${payload.published} restaurants to user page.`, "success");
+  } catch (error) {
+    setStatus(selectionStatus, error.message, "error");
   }
-
-  if (!idsSaved) {
-    setStatus(selectionStatus, `Published ${selectedIds.length} restaurants, but could not save checkbox preferences.`, "success");
-    return;
-  }
-
-  setStatus(selectionStatus, `Published ${selectedIds.length} restaurants to user page.`, "success");
 });
 
-loadSourceSettings();
-renderCatalog();
+hydrate().catch((error) => setStatus(sourceStatus, error.message, "error"));

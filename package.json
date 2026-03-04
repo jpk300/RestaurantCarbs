@@ -1,0 +1,11 @@
+{
+  "name": "restaurant-carbs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone MenuStat nutrition browser for mobile",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}

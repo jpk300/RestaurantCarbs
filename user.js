@@ -24,19 +24,8 @@ function resetCategoryAndItems() {
   filteredItems = [];
 }
 
-function loadVisibleRestaurants() {
-  const published = getPublishedCatalog();
-
-  if (published.length) {
-    restaurants = published;
-  } else {
-    const catalog = getCatalog();
-    const selected = new Set(getSelectedIds());
-    restaurants = catalog.filter((restaurant) => selected.has(restaurant.id));
-  }
-
+function renderRestaurants() {
   restaurantSelect.innerHTML = '<option value="">Select a restaurant…</option>';
-
   restaurants.forEach((restaurant, index) => {
     const option = document.createElement("option");
     option.value = String(index);
@@ -45,26 +34,18 @@ function loadVisibleRestaurants() {
   });
 
   if (!restaurants.length) {
-    setStatus(
-      userStatus,
-      "No restaurants are available yet. Ask admin to load a MenuStat file and publish selections.",
-      "error"
-    );
+    setStatus(userStatus, "No restaurants are published yet. Ask admin to publish selections.", "error");
   } else {
     setStatus(userStatus, `Showing ${restaurants.length} curated restaurants.`, "success");
   }
 }
 
 restaurantSelect.addEventListener("change", (event) => {
-  const value = event.target.value;
   resetCategoryAndItems();
   resetNutrition();
+  if (event.target.value === "") return;
 
-  if (value === "") {
-    return;
-  }
-
-  const selectedRestaurant = restaurants[Number(value)];
+  const selectedRestaurant = restaurants[Number(event.target.value)];
   const categories = [...new Set(selectedRestaurant.items.map((item) => item.category || "Uncategorized"))].sort();
 
   categories.forEach((category) => {
@@ -80,14 +61,13 @@ restaurantSelect.addEventListener("change", (event) => {
 categorySelect.addEventListener("change", (event) => {
   const restaurantIndex = restaurantSelect.value;
   const category = event.target.value;
+
   itemSelect.innerHTML = '<option value="">Select a menu item…</option>';
   itemSelect.disabled = true;
   filteredItems = [];
   resetNutrition();
 
-  if (restaurantIndex === "" || category === "") {
-    return;
-  }
+  if (restaurantIndex === "" || category === "") return;
 
   filteredItems = restaurants[Number(restaurantIndex)].items.filter(
     (item) => (item.category || "Uncategorized") === category
@@ -120,6 +100,14 @@ itemSelect.addEventListener("change", (event) => {
   nutritionGrid.classList.remove("hidden");
 });
 
-loadVisibleRestaurants();
-resetCategoryAndItems();
-resetNutrition();
+(async function init() {
+  try {
+    const state = await apiGet("/api/state");
+    restaurants = Array.isArray(state.publishedCatalog) ? state.publishedCatalog : [];
+    renderRestaurants();
+    resetCategoryAndItems();
+    resetNutrition();
+  } catch (error) {
+    setStatus(userStatus, error.message, "error");
+  }
+})();
