@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restaurant Carbs Finder</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <p class="badge">Diabetes-Friendly Nutrition Support</p>
+        <h1>Restaurant Carbs Finder</h1>
+        <p>Compare carbs, fat, and calories quickly to support everyday diabetes care choices.</p>
+      </header>
+
+      <section class="card care-card">
+        <h2>Diabetes Care Support</h2>
+        <ul>
+          <li>Track carbs to estimate glucose impact before meals.</li>
+          <li>Compare menu choices across restaurants.</li>
+          <li>Use this with your care plan from your clinician.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <label for="restaurantSelect">Choose a restaurant</label>
+        <select id="restaurantSelect">
+          <option value="">Select a restaurant…</option>
+        </select>
+      </section>
+
+      <section class="card">
+        <label for="itemSelect">Choose a menu item</label>
+        <select id="itemSelect" disabled>
+          <option value="">Select a menu item…</option>
+        </select>
+      </section>
+
+      <section class="card nutrition" aria-live="polite">
+        <h2>Nutrition Facts</h2>
+        <p class="placeholder">Select a restaurant and item to view nutrition details.</p>
+        <dl class="nutrition-grid hidden" id="nutritionGrid">
+          <div><dt>Carbs</dt><dd id="carbsValue">—</dd></div>
+          <div><dt>Fat</dt><dd id="fatValue">—</dd></div>
+          <div><dt>Calories</dt><dd id="caloriesValue">—</dd></div>
+        </dl>
+        <p class="status" id="userStatus"></p>
+      </section>
+
+      <p class="subtle-link"><a href="admin.html">Data source settings</a></p>
+    </main>
+
+    <script src="app.js"></script>
+    <script src="user.js"></script>
+  </body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restaurant Carbs Finder • Data Admin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <p class="badge">Data Admin</p>
+        <h1>MenuStat Dataset Setup</h1>
+        <p>
+          MenuStat publishes downloadable spreadsheet datasets. Load an XLS/XLSX file (recommended)
+          or CSV, then choose which restaurants appear for users.
+        </p>
+      </header>
+
+      <section class="card">
+        <h2>1) Dataset Source</h2>
+        <label for="datasetUrl">MenuStat dataset URL (optional)</label>
+        <input id="datasetUrl" type="text" placeholder="https://...xls or .csv" />
+        <div class="row">
+          <button id="saveSource" type="button">Save Source</button>
+          <button id="loadFromUrl" type="button">Load Dataset from URL</button>
+        </div>
+        <p class="help-text">
+          Official source: <a href="https://menustat.org/data/" target="_blank" rel="noreferrer">menustat.org/data</a>
+        </p>
+        <p class="status" id="sourceStatus">No dataset loaded yet.</p>
+      </section>
+
+      <section class="card">
+        <h2>2) Upload Dataset File</h2>
+        <input id="csvInput" type="file" accept=".csv,.xls,.xlsx" />
+        <p class="help-text">Supported formats: CSV, XLS, XLSX. Required fields: restaurant, item, carbs, fat, calories.</p>
+        <p class="status" id="uploadStatus">Upload a file to build your catalog.</p>
+      </section>
+
+      <section class="card">
+        <h2>3) Select Restaurants for User Page</h2>
+        <div id="restaurantList" class="checkbox-list"></div>
+        <button id="saveSelection" type="button">Publish Selection</button>
+        <p class="status" id="selectionStatus">No published restaurant selection yet.</p>
+      </section>
+
+      <p class="subtle-link"><a href="user.html">← Back to user experience</a></p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

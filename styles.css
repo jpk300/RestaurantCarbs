@@ -1,0 +1,143 @@
+:root {
+  --bg: #f3f2ff;
+  --card: #ffffff;
+  --primary: #8f94ff;
+  --primary-deep: #7076ea;
+  --text: #1f2547;
+  --muted: #5e6690;
+  --border: #d8dcff;
+  --ok: #166534;
+  --error: #b91c1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top right, #eceeff 0%, var(--bg) 45%);
+  color: var(--text);
+}
+
+.app {
+  width: min(860px, 100%);
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.hero {
+  background: linear-gradient(120deg, #9499ff, #7e84f4);
+  color: #fff;
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.hero h1 { margin: 0.2rem 0; }
+
+.badge {
+  margin: 0;
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 0.82rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 8px 22px rgba(81, 89, 176, 0.08);
+}
+
+label { display: block; font-weight: 600; margin-bottom: 0.45rem; }
+
+input, select, button {
+  width: 100%;
+  border: 1px solid #c9cefb;
+  border-radius: 10px;
+  padding: 0.72rem;
+  font-size: 1rem;
+}
+
+button {
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+button:hover { background: var(--primary-deep); }
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+}
+
+.help-text, .status {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.status.success { color: var(--ok); }
+.status.error { color: var(--error); }
+
+.checkbox-list {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.45rem;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.65rem;
+}
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.checkbox-row input { width: auto; }
+
+.care-card { background: linear-gradient(180deg, #f5f6ff, #fff); }
+.care-card ul { margin: 0.4rem 0 0; padding-left: 1rem; }
+
+.nutrition-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+}
+.nutrition-grid div {
+  background: #f6f7ff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem;
+  text-align: center;
+}
+.nutrition-grid dt { color: var(--muted); font-size: 0.9rem; }
+.nutrition-grid dd { margin: 0.3rem 0 0; color: var(--primary-deep); font-weight: 800; font-size: 1.22rem; }
+
+.subtle-link {
+  text-align: right;
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+}
+
+.subtle-link a {
+  color: #7f86b8;
+  text-decoration: none;
+}
+.subtle-link a:hover {
+  text-decoration: underline;
+}
+
+.hidden { display: none; }
+
+@media (max-width: 620px) {
+  .row,
+  .nutrition-grid { grid-template-columns: 1fr; }
+}
