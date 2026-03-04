@@ -15,9 +15,15 @@ function resetNutrition() {
 }
 
 function loadVisibleRestaurants() {
-  const catalog = getCatalog();
-  const selected = new Set(getSelectedIds());
-  restaurants = catalog.filter((restaurant) => selected.has(restaurant.id));
+  const published = getPublishedCatalog();
+
+  if (published.length) {
+    restaurants = published;
+  } else {
+    const catalog = getCatalog();
+    const selected = new Set(getSelectedIds());
+    restaurants = catalog.filter((restaurant) => selected.has(restaurant.id));
+  }
 
   restaurantSelect.innerHTML = '<option value="">Select a restaurant…</option>';
 
@@ -29,7 +35,11 @@ function loadVisibleRestaurants() {
   });
 
   if (!restaurants.length) {
-    setStatus(userStatus, "No restaurants are available yet. Ask admin to configure MenuStat and publish selections.", "error");
+    setStatus(
+      userStatus,
+      "No restaurants are available yet. Ask admin to load a MenuStat file and publish selections.",
+      "error"
+    );
   } else {
     setStatus(userStatus, `Showing ${restaurants.length} curated restaurants.`, "success");
   }

@@ -1,7 +1,8 @@
 const STORAGE_KEYS = {
   dataSource: "menustat_data_source",
   catalog: "menustat_restaurant_catalog",
-  selectedIds: "menustat_selected_restaurant_ids"
+  selectedIds: "menustat_selected_restaurant_ids",
+  publishedCatalog: "menustat_published_catalog"
 };
 
 const DEFAULT_DATA_SOURCE = {
@@ -18,7 +19,12 @@ function readJson(key, fallback) {
 }
 
 function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function getDataSource() {
@@ -26,7 +32,7 @@ function getDataSource() {
 }
 
 function setDataSource(value) {
-  writeJson(STORAGE_KEYS.dataSource, value);
+  return writeJson(STORAGE_KEYS.dataSource, value);
 }
 
 function getCatalog() {
@@ -34,7 +40,7 @@ function getCatalog() {
 }
 
 function setCatalog(catalog) {
-  writeJson(STORAGE_KEYS.catalog, catalog);
+  return writeJson(STORAGE_KEYS.catalog, catalog);
 }
 
 function getSelectedIds() {
@@ -42,7 +48,15 @@ function getSelectedIds() {
 }
 
 function setSelectedIds(ids) {
-  writeJson(STORAGE_KEYS.selectedIds, ids);
+  return writeJson(STORAGE_KEYS.selectedIds, ids);
+}
+
+function getPublishedCatalog() {
+  return readJson(STORAGE_KEYS.publishedCatalog, []);
+}
+
+function setPublishedCatalog(catalog) {
+  return writeJson(STORAGE_KEYS.publishedCatalog, catalog);
 }
 
 function setStatus(element, message, type = "") {
@@ -97,10 +111,7 @@ function catalogFromRows(rows) {
   const headers = normalizeHeaders(Object.keys(rows[0]));
   const keys = Object.keys(rows[0]);
 
-  const findColumn = (candidates) => {
-    const index = headers.findIndex((header) => candidates.includes(header));
-    return index;
-  };
+  const findColumn = (candidates) => headers.findIndex((header) => candidates.includes(header));
 
   const restaurantIndex = findColumn(["restaurant", "restaurantname", "chain", "chainname", "brand", "brandname"]);
   const itemIndex = findColumn(["item", "itemname", "menuitem", "foodname", "food"]);
