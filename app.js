@@ -1,13 +1,31 @@
-async function apiGet(path) {
-  const response = await fetch(path);
+const ADMIN_AUTH_STORAGE_KEY = "restaurant_carbs_admin_auth";
+
+function getAdminAuthHeader() {
+  try {
+    const token = sessionStorage.getItem(ADMIN_AUTH_STORAGE_KEY);
+    return token ? { Authorization: `Basic ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
+function setAdminCredentials(username, password) {
+  const token = btoa(`${username}:${password}`);
+  sessionStorage.setItem(ADMIN_AUTH_STORAGE_KEY, token);
+}
+
+async function apiGet(path, options = {}) {
+  const headers = options.includeAdminAuth ? getAdminAuthHeader() : {};
+  const response = await fetch(path, { headers });
   if (!response.ok) throw new Error(`Request failed (${response.status})`);
   return response.json();
 }
 
-async function apiPost(path, body) {
+async function apiPost(path, body, options = {}) {
+  const authHeaders = options.includeAdminAuth ? getAdminAuthHeader() : {};
   const response = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders },
     body: JSON.stringify(body)
   });
   const payload = await response.json();

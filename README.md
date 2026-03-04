@@ -23,13 +23,15 @@ cd /path/to/RestaurantCarbs
 ## 3) Start the app
 
 ```bash
-npm start
+ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me npm start
 ```
+
+Set your own values for `ADMIN_USERNAME` and `ADMIN_PASSWORD` before exposing this app outside your machine.
 
 If `npm start` is unavailable in your environment, this does the same thing:
 
 ```bash
-node server.js
+ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me node server.js
 ```
 
 You should see:
@@ -223,3 +225,28 @@ docker run -d   --name restaurant-carbs   -p 4173:4173   -v "$(pwd)/data:/app/da
   sudo chown -R $USER:$USER ./data
   ```
 - **Cannot access from phone**: open firewall for TCP 4173 (or your mapped host port).
+
+
+## 10) Security hardening notes (for internet exposure)
+
+The app now includes basic auth protection for `admin.html` and admin APIs (`/api/admin/state`, `/api/source`, `/api/catalog`, `/api/publish`, `/api/fetch-dataset`).
+
+Recommendations to address review items **#2, #3, and #5**:
+
+### #2 SSRF protection (dataset URL fetching)
+
+- Keep server-side URL fetches restricted to HTTPS and an explicit hostname allowlist.
+- Current allowlist is in `server.js` (`menustat.org`, `www.menustat.org`, `data.gov`, `catalog.data.gov`).
+- If you need another source, add it deliberately to the allowlist instead of opening arbitrary URLs.
+
+### #3 XSS prevention (HTML rendering)
+
+- Avoid `innerHTML` when inserting dataset-derived values (restaurant names, item names, categories).
+- Prefer `textContent` and `document.createElement` in both `admin.js` and `user.js`.
+- If HTML output is unavoidable, sanitize with a trusted library before rendering.
+
+### #5 Abuse controls (rate limits + API constraints)
+
+- Add per-IP rate limiting in front of admin endpoints, especially `/api/fetch-dataset` and publish endpoints.
+- Enforce payload size limits and input schema validation for `/api/catalog` and `/api/publish`.
+- For production, run behind Nginx/Caddy/Cloudflare and apply request throttling there too.
