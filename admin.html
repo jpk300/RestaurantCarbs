@@ -19,16 +19,11 @@
       </header>
 
       <section class="card">
-        <h2>0) Admin Login</h2>
-        <label for="adminUsername">Username</label>
-        <input id="adminUsername" type="text" autocomplete="username" placeholder="Admin username" />
-        <label for="adminPassword">Password</label>
-        <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Admin password" />
-        <div class="row">
-          <button id="saveAuth" type="button">Save Login</button>
-        </div>
-        <p class="help-text">Credentials are required for admin APIs and are saved in this browser session only.</p>
-        <p class="status" id="authStatus">Enter admin credentials to continue.</p>
+        <h2>Admin Access</h2>
+        <p class="help-text">
+          This page uses browser HTTP Basic Auth. If your credentials are wrong, refresh this page and sign in again.
+        </p>
+        <p class="status" id="authStatus">Authenticated session required for admin actions.</p>
       </section>
 
       <section class="card">

@@ -1,6 +1,3 @@
-const adminUsernameInput = document.getElementById("adminUsername");
-const adminPasswordInput = document.getElementById("adminPassword");
-const saveAuthButton = document.getElementById("saveAuth");
 const authStatus = document.getElementById("authStatus");
 const datasetUrlInput = document.getElementById("datasetUrl");
 const saveSourceButton = document.getElementById("saveSource");
@@ -36,11 +33,12 @@ function renderCatalog() {
 }
 
 async function hydrate() {
-  const state = await apiGet("/api/admin/state", { includeAdminAuth: true });
+  const state = await apiGet("/api/admin/state");
   datasetUrlInput.value = state.dataSource?.datasetUrl || "";
   workingCatalog = Array.isArray(state.catalog) ? state.catalog : [];
   selectedIds = Array.isArray(state.selectedIds) ? state.selectedIds : [];
   renderCatalog();
+  setStatus(authStatus, "Authenticated. You can now manage dataset and publishing.", "success");
 }
 
 async function parseDatasetFromResponse(response, pathHint) {
@@ -52,31 +50,13 @@ async function parseDatasetFromResponse(response, pathHint) {
 
 async function persistCatalog(catalog, statusElement) {
   workingCatalog = catalog;
-  await apiPost("/api/catalog", { catalog }, { includeAdminAuth: true });
+  await apiPost("/api/catalog", { catalog });
   setStatus(statusElement, `Loaded ${catalog.length} restaurants.`, "success");
 }
 
-saveAuthButton.addEventListener("click", async () => {
-  const username = adminUsernameInput.value.trim();
-  const password = adminPasswordInput.value;
-
-  if (!username || !password) {
-    setStatus(authStatus, "Enter both username and password.", "error");
-    return;
-  }
-
-  setAdminCredentials(username, password);
-  try {
-    await hydrate();
-    setStatus(authStatus, "Admin login saved for this browser session.", "success");
-  } catch (error) {
-    setStatus(authStatus, "Login failed. Check username/password and try again.", "error");
-  }
-});
-
 saveSourceButton.addEventListener("click", async () => {
   try {
-    await apiPost("/api/source", { datasetUrl: datasetUrlInput.value.trim() }, { includeAdminAuth: true });
+    await apiPost("/api/source", { datasetUrl: datasetUrlInput.value.trim() });
     setStatus(sourceStatus, "Dataset source saved.", "success");
   } catch (error) {
     setStatus(sourceStatus, error.message, "error");
@@ -92,9 +72,7 @@ loadFromUrlButton.addEventListener("click", async () => {
 
   try {
     setStatus(sourceStatus, "Downloading dataset via server...");
-    const response = await fetch(`/api/fetch-dataset?url=${encodeURIComponent(url)}`, {
-      headers: getAdminAuthHeader()
-    });
+    const response = await fetch(`/api/fetch-dataset?url=${encodeURIComponent(url)}`);
 
     if (!response.ok) {
       const payload = await response.json();
@@ -137,7 +115,7 @@ saveSelectionButton.addEventListener("click", async () => {
   }
 
   try {
-    const payload = await apiPost("/api/publish", { selectedIds: ids }, { includeAdminAuth: true });
+    const payload = await apiPost("/api/publish", { selectedIds: ids });
     selectedIds = ids;
     setStatus(selectionStatus, `Published ${payload.published} restaurants to user page.`, "success");
   } catch (error) {
@@ -145,4 +123,6 @@ saveSelectionButton.addEventListener("click", async () => {
   }
 });
 
-setStatus(sourceStatus, "Enter admin login above to load current state.");
+hydrate().catch(() => {
+  setStatus(authStatus, "Auth failed. Refresh this page and sign in using your container ADMIN_USERNAME/ADMIN_PASSWORD.", "error");
+});

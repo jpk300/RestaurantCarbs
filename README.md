@@ -40,6 +40,9 @@ You should see:
 RestaurantCarbs running on http://0.0.0.0:4173
 ```
 
+Admin credentials are validated by the browser auth prompt (not an in-page login form).
+If credentials change, refresh the page and sign in again.
+
 ## 4) Open it in a browser
 
 ### On your computer
@@ -61,7 +64,7 @@ Example:
 
 ## 5) Admin flow (first-time setup)
 
-1. Open `admin.html`.
+1. Open `admin.html` and enter the browser Basic Auth prompt using `ADMIN_USERNAME`/`ADMIN_PASSWORD`.
 2. Load a MenuStat dataset:
    - **Option A**: Paste dataset URL and click **Load Dataset from URL**.
    - **Option B**: Download the file and upload it in **Upload Dataset File**.
