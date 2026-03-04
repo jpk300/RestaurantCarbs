@@ -1,6 +1,3 @@
-const restaurantSelect = document.getElementById("restaurantSelect");
-const categorySelect = document.getElementById("categorySelect");
-const itemSelect = document.getElementById("itemSelect");
 const nutritionGrid = document.getElementById("nutritionGrid");
 const carbsValue = document.getElementById("carbsValue");
 const fatValue = document.getElementById("fatValue");
@@ -10,93 +7,156 @@ const userStatus = document.getElementById("userStatus");
 
 let restaurants = [];
 let filteredItems = [];
+let selectedRestaurantIndex = null;
+let selectedCategory = null;
 
 function resetNutrition() {
   nutritionGrid.classList.add("hidden");
   placeholder.textContent = "Select a restaurant, category, and item to view nutrition details.";
 }
 
-function resetCategoryAndItems() {
-  categorySelect.innerHTML = '<option value="">Select a category…</option>';
-  categorySelect.disabled = true;
-  itemSelect.innerHTML = '<option value="">Select a menu item…</option>';
-  itemSelect.disabled = true;
-  filteredItems = [];
-}
+function createDropdown(root, placeholderText) {
+  root.innerHTML = `
+    <button type="button" class="dropdown-trigger" aria-expanded="false">${placeholderText}</button>
+    <div class="dropdown-panel hidden">
+      <input type="text" class="dropdown-search" placeholder="Search..." />
+      <div class="dropdown-options"></div>
+    </div>
+  `;
 
-function renderRestaurants() {
-  restaurantSelect.innerHTML = '<option value="">Select a restaurant…</option>';
-  restaurants.forEach((restaurant, index) => {
-    const option = document.createElement("option");
-    option.value = String(index);
-    option.textContent = `${restaurant.name} (${restaurant.items.length} items)`;
-    restaurantSelect.appendChild(option);
+  const trigger = root.querySelector(".dropdown-trigger");
+  const panel = root.querySelector(".dropdown-panel");
+  const search = root.querySelector(".dropdown-search");
+  const optionsContainer = root.querySelector(".dropdown-options");
+  const hostCard = root.closest(".card");
+
+  let options = [];
+  let selected = null;
+  let onChange = () => {};
+  let disabled = false;
+
+  function close() {
+    panel.classList.add("hidden");
+    root.classList.remove("open");
+    if (hostCard) hostCard.classList.remove("dropdown-host-open");
+    trigger.setAttribute("aria-expanded", "false");
+  }
+
+  function open() {
+    if (disabled) return;
+    panel.classList.remove("hidden");
+    root.classList.add("open");
+    if (hostCard) hostCard.classList.add("dropdown-host-open");
+    trigger.setAttribute("aria-expanded", "true");
+    search.focus();
+  }
+
+  function render(filterText = "") {
+    const q = filterText.trim().toLowerCase();
+    const visible = options.filter((opt) => opt.label.toLowerCase().includes(q));
+
+    if (!visible.length) {
+      optionsContainer.innerHTML = '<p class="dropdown-empty">No matches found.</p>';
+      return;
+    }
+
+    optionsContainer.innerHTML = visible
+      .map(
+        (opt) => `<button type="button" class="dropdown-option ${selected === opt.value ? "selected" : ""}" data-value="${String(
+          opt.value
+        )}">${opt.label}</button>`
+      )
+      .join("");
+  }
+
+  trigger.addEventListener("click", () => {
+    if (panel.classList.contains("hidden")) open();
+    else close();
   });
 
-  if (!restaurants.length) {
-    setStatus(userStatus, "No restaurants are published yet. Ask admin to publish selections.", "error");
-  } else {
-    setStatus(userStatus, `Showing ${restaurants.length} curated restaurants.`, "success");
-  }
+  search.addEventListener("input", () => render(search.value));
+
+  optionsContainer.addEventListener("click", (event) => {
+    const btn = event.target.closest(".dropdown-option");
+    if (!btn) return;
+    const value = btn.dataset.value;
+    const picked = options.find((opt) => String(opt.value) === value);
+    if (!picked) return;
+
+    selected = picked.value;
+    trigger.textContent = picked.label;
+    render(search.value);
+    close();
+    onChange(picked);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!root.contains(event.target)) close();
+  });
+
+  return {
+    setOptions(nextOptions) {
+      options = nextOptions;
+      selected = null;
+      trigger.textContent = placeholderText;
+      search.value = "";
+      render();
+    },
+    setDisabled(nextDisabled) {
+      disabled = nextDisabled;
+      trigger.disabled = nextDisabled;
+      if (nextDisabled) close();
+    },
+    onChange(handler) {
+      onChange = handler;
+    }
+  };
 }
 
-restaurantSelect.addEventListener("change", (event) => {
-  resetCategoryAndItems();
-  resetNutrition();
-  if (event.target.value === "") return;
+const restaurantDropdown = createDropdown(document.getElementById("restaurantDropdown"), "Select a restaurant…");
+const categoryDropdown = createDropdown(document.getElementById("categoryDropdown"), "Select a category…");
+const itemDropdown = createDropdown(document.getElementById("itemDropdown"), "Select a menu item…");
 
-  const selectedRestaurant = restaurants[Number(event.target.value)];
+categoryDropdown.setDisabled(true);
+itemDropdown.setDisabled(true);
+
+restaurantDropdown.onChange((picked) => {
+  selectedRestaurantIndex = Number(picked.value);
+  selectedCategory = null;
+  filteredItems = [];
+  resetNutrition();
+
+  const selectedRestaurant = restaurants[selectedRestaurantIndex];
   const categories = [...new Set(selectedRestaurant.items.map((item) => item.category || "Uncategorized"))].sort();
 
-  categories.forEach((category) => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    categorySelect.appendChild(option);
-  });
-
-  categorySelect.disabled = false;
+  categoryDropdown.setOptions(categories.map((category) => ({ value: category, label: category })));
+  categoryDropdown.setDisabled(false);
+  itemDropdown.setOptions([]);
+  itemDropdown.setDisabled(true);
 });
 
-categorySelect.addEventListener("change", (event) => {
-  const restaurantIndex = restaurantSelect.value;
-  const category = event.target.value;
-
-  itemSelect.innerHTML = '<option value="">Select a menu item…</option>';
-  itemSelect.disabled = true;
-  filteredItems = [];
-  resetNutrition();
-
-  if (restaurantIndex === "" || category === "") return;
-
-  filteredItems = restaurants[Number(restaurantIndex)].items.filter(
-    (item) => (item.category || "Uncategorized") === category
+categoryDropdown.onChange((picked) => {
+  selectedCategory = picked.value;
+  filteredItems = restaurants[selectedRestaurantIndex].items.filter(
+    (item) => (item.category || "Uncategorized") === selectedCategory
   );
 
-  filteredItems.forEach((item, itemIndex) => {
-    const option = document.createElement("option");
-    option.value = String(itemIndex);
-    option.textContent = item.name;
-    itemSelect.appendChild(option);
-  });
-
-  itemSelect.disabled = false;
+  itemDropdown.setOptions(
+    filteredItems.map((item, index) => ({
+      value: String(index),
+      label: item.name
+    }))
+  );
+  itemDropdown.setDisabled(false);
+  resetNutrition();
 });
 
-itemSelect.addEventListener("change", (event) => {
-  const restaurantIndex = restaurantSelect.value;
-  const itemIndex = event.target.value;
-
-  if (restaurantIndex === "" || itemIndex === "") {
-    resetNutrition();
-    return;
-  }
-
-  const item = filteredItems[Number(itemIndex)];
+itemDropdown.onChange((picked) => {
+  const item = filteredItems[Number(picked.value)];
   carbsValue.textContent = `${item.carbs} g`;
   fatValue.textContent = `${item.fat} g`;
   caloriesValue.textContent = `${item.calories}`;
-  placeholder.textContent = `${restaurants[Number(restaurantIndex)].name} • ${item.category || "Uncategorized"} • ${item.name}`;
+  placeholder.textContent = `${restaurants[selectedRestaurantIndex].name} • ${item.category || "Uncategorized"} • ${item.name}`;
   nutritionGrid.classList.remove("hidden");
 });
 
@@ -104,8 +164,22 @@ itemSelect.addEventListener("change", (event) => {
   try {
     const state = await apiGet("/api/state");
     restaurants = Array.isArray(state.publishedCatalog) ? state.publishedCatalog : [];
-    renderRestaurants();
-    resetCategoryAndItems();
+
+    restaurantDropdown.setOptions(
+      restaurants.map((restaurant, index) => ({
+        value: String(index),
+        label: `${restaurant.name} (${restaurant.items.length} items)`
+      }))
+    );
+
+    if (!restaurants.length) {
+      setStatus(userStatus, "No restaurants are published yet. Ask admin to publish selections.", "error");
+      restaurantDropdown.setDisabled(true);
+    } else {
+      setStatus(userStatus, `Showing ${restaurants.length} curated restaurants.`, "success");
+      restaurantDropdown.setDisabled(false);
+    }
+
     resetNutrition();
   } catch (error) {
     setStatus(userStatus, error.message, "error");
