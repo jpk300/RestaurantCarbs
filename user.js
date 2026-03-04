@@ -1,4 +1,5 @@
 const restaurantSelect = document.getElementById("restaurantSelect");
+const categorySelect = document.getElementById("categorySelect");
 const itemSelect = document.getElementById("itemSelect");
 const nutritionGrid = document.getElementById("nutritionGrid");
 const carbsValue = document.getElementById("carbsValue");
@@ -8,10 +9,19 @@ const placeholder = document.querySelector(".placeholder");
 const userStatus = document.getElementById("userStatus");
 
 let restaurants = [];
+let filteredItems = [];
 
 function resetNutrition() {
   nutritionGrid.classList.add("hidden");
-  placeholder.textContent = "Select a restaurant and item to view nutrition details.";
+  placeholder.textContent = "Select a restaurant, category, and item to view nutrition details.";
+}
+
+function resetCategoryAndItems() {
+  categorySelect.innerHTML = '<option value="">Select a category…</option>';
+  categorySelect.disabled = true;
+  itemSelect.innerHTML = '<option value="">Select a menu item…</option>';
+  itemSelect.disabled = true;
+  filteredItems = [];
 }
 
 function loadVisibleRestaurants() {
@@ -47,15 +57,43 @@ function loadVisibleRestaurants() {
 
 restaurantSelect.addEventListener("change", (event) => {
   const value = event.target.value;
-  itemSelect.innerHTML = '<option value="">Select a menu item…</option>';
+  resetCategoryAndItems();
   resetNutrition();
 
   if (value === "") {
-    itemSelect.disabled = true;
     return;
   }
 
-  restaurants[Number(value)].items.forEach((item, itemIndex) => {
+  const selectedRestaurant = restaurants[Number(value)];
+  const categories = [...new Set(selectedRestaurant.items.map((item) => item.category || "Uncategorized"))].sort();
+
+  categories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    categorySelect.appendChild(option);
+  });
+
+  categorySelect.disabled = false;
+});
+
+categorySelect.addEventListener("change", (event) => {
+  const restaurantIndex = restaurantSelect.value;
+  const category = event.target.value;
+  itemSelect.innerHTML = '<option value="">Select a menu item…</option>';
+  itemSelect.disabled = true;
+  filteredItems = [];
+  resetNutrition();
+
+  if (restaurantIndex === "" || category === "") {
+    return;
+  }
+
+  filteredItems = restaurants[Number(restaurantIndex)].items.filter(
+    (item) => (item.category || "Uncategorized") === category
+  );
+
+  filteredItems.forEach((item, itemIndex) => {
     const option = document.createElement("option");
     option.value = String(itemIndex);
     option.textContent = item.name;
@@ -74,13 +112,14 @@ itemSelect.addEventListener("change", (event) => {
     return;
   }
 
-  const item = restaurants[Number(restaurantIndex)].items[Number(itemIndex)];
+  const item = filteredItems[Number(itemIndex)];
   carbsValue.textContent = `${item.carbs} g`;
   fatValue.textContent = `${item.fat} g`;
   caloriesValue.textContent = `${item.calories}`;
-  placeholder.textContent = `${restaurants[Number(restaurantIndex)].name} • ${item.name}`;
+  placeholder.textContent = `${restaurants[Number(restaurantIndex)].name} • ${item.category || "Uncategorized"} • ${item.name}`;
   nutritionGrid.classList.remove("hidden");
 });
 
 loadVisibleRestaurants();
+resetCategoryAndItems();
 resetNutrition();

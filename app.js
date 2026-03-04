@@ -108,29 +108,34 @@ function catalogFromRows(rows) {
     throw new Error("Dataset has no rows.");
   }
 
-  const headers = normalizeHeaders(Object.keys(rows[0]));
   const keys = Object.keys(rows[0]);
+  const normalizedByKey = keys.map((key) => ({ key, normalized: String(key || "").toLowerCase().replace(/[^a-z0-9]/g, "") }));
 
-  const findColumn = (candidates) => headers.findIndex((header) => candidates.includes(header));
+  const findKey = (candidates) => {
+    const hit = normalizedByKey.find((entry) => candidates.includes(entry.normalized));
+    return hit ? hit.key : null;
+  };
 
-  const restaurantIndex = findColumn(["restaurant", "restaurantname", "chain", "chainname", "brand", "brandname"]);
-  const itemIndex = findColumn(["item", "itemname", "menuitem", "foodname", "food"]);
-  const carbsIndex = findColumn(["carbs", "carbohydrates", "totalcarbohydrate", "totalcarbs"]);
-  const fatIndex = findColumn(["fat", "totalfat"]);
-  const caloriesIndex = findColumn(["calories", "kcal", "energy"]);
+  const restaurantKey = findKey(["restaurant", "restaurantname", "chain", "chainname", "brand", "brandname"]);
+  const itemKey = findKey(["item", "itemname", "menuitem", "foodname", "food"]);
+  const categoryKey = findKey(["foodcategory", "category", "foodgroup", "menucategory", "subcategory"]);
+  const carbsKey = findKey(["carbs", "carbohydrates", "totalcarbohydrate", "totalcarbs"]);
+  const fatKey = findKey(["fat", "totalfat"]);
+  const caloriesKey = findKey(["calories", "kcal", "energy"]);
 
-  if ([restaurantIndex, itemIndex, carbsIndex, fatIndex, caloriesIndex].some((index) => index < 0)) {
+  if (!restaurantKey || !itemKey || !carbsKey || !fatKey || !caloriesKey) {
     throw new Error("Dataset must include restaurant, item, carbs, fat, and calories columns.");
   }
 
   const byRestaurant = new Map();
 
   rows.forEach((row) => {
-    const restaurantName = row[keys[restaurantIndex]];
-    const itemName = row[keys[itemIndex]];
-    const carbs = Number(row[keys[carbsIndex]]);
-    const fat = Number(row[keys[fatIndex]]);
-    const calories = Number(row[keys[caloriesIndex]]);
+    const restaurantName = row[restaurantKey];
+    const itemName = row[itemKey];
+    const categoryName = categoryKey ? row[categoryKey] : "";
+    const carbs = Number(row[carbsKey]);
+    const fat = Number(row[fatKey]);
+    const calories = Number(row[caloriesKey]);
 
     if (!restaurantName || !itemName || [carbs, fat, calories].some((value) => Number.isNaN(value))) {
       return;
@@ -149,6 +154,7 @@ function catalogFromRows(rows) {
 
     byRestaurant.get(restaurantName).items.push({
       name: String(itemName),
+      category: String(categoryName || "Uncategorized"),
       carbs,
       fat,
       calories
@@ -163,6 +169,7 @@ function catalogFromRows(rows) {
 
   return catalog;
 }
+
 
 function parseMenuStatCsv(csvText) {
   const lines = csvText

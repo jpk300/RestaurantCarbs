@@ -22,6 +22,13 @@
       </section>
 
       <section class="card">
+        <label for="categorySelect">Choose a food category</label>
+        <select id="categorySelect" disabled>
+          <option value="">Select a category…</option>
+        </select>
+      </section>
+
+      <section class="card">
         <label for="itemSelect">Choose a menu item</label>
         <select id="itemSelect" disabled>
           <option value="">Select a menu item…</option>
@@ -30,7 +37,7 @@
 
       <section class="card nutrition" aria-live="polite">
         <h2>Nutrition Facts</h2>
-        <p class="placeholder">Select a restaurant and item to view nutrition details.</p>
+        <p class="placeholder">Select a restaurant, category, and item to view nutrition details.</p>
         <dl class="nutrition-grid hidden" id="nutritionGrid">
           <div><dt>Carbs</dt><dd id="carbsValue">—</dd></div>
           <div><dt>Fat</dt><dd id="fatValue">—</dd></div>
